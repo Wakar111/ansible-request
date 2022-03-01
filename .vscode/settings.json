@@ -1,0 +1,5 @@
+{
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/ansible-community/schemas/main/f/ansible-playbook.json": "file:///c%3A/Users/afzal/Desktop/artifacts/ansible-request/soap-request-deploy-carfile.yml"
+  }
+}
