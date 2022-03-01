@@ -2,32 +2,41 @@
   hosts: localhost
   connection: local
   vars:
-    FILE: ./az_car_file/new-ping-car_0.0.42.car
+    car_name: new-ping-car_0.0.42.car
   tasks:
     - name: render car file to variable
       set_fact:
-        template_value: "{{ lookup('template', './az_car_file/new-ping-car_0.0.42.car') }}"
-
-    - name: encode car file to base64
-      copy:
-        content: '{{ template_value | b64encode }}'
-        dest: './carFileEncode.txt'
+        car_value: "{{ lookup('template', './az_car_file/{{car_name}}') }}"
 
     - name: call soap service
       uri:
-        url: 'https://192.168.56.1:9443/services/CarbonAppUploader.CarbonAppUploaderHttpsSoap12Endpoint'
+        url: https://192.168.56.1:9443/services/CarbonAppUploader.CarbonAppUploaderHttpsSoap11Endpoint
         method: 'POST'
-        body_format: raw
-        user: admin
-        password: admin
-        force_basic_auth: yes
+        user: 'admin'
+        password: 'admin'
+        body: |
+          <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:upl="http://upload.application.carbon.wso2.org" xmlns:xsd="http://upload.application.carbon.wso2.org/xsd">
+             <soapenv:Header/>
+              <soapenv:Body>
+                  <upl:uploadApp>
+                    <!--Zero or more repetitions:-->
+                    <upl:fileItems>
+                        <!--Optional:-->
+                        <xsd:dataHandler>{{ car_value | b64encode }}</xsd:dataHandler>
+                        <!--Optional:-->
+                        <xsd:fileName>{{ car_name }}</xsd:fileName>
+                        <!--Optional:-->
+                        <xsd:fileType>jar</xsd:fileType>
+                    </upl:fileItems>
+                  </upl:uploadApp>
+              </soapenv:Body>
+          </soapenv:Envelope>
+        force_basic_auth: true
         validate_certs: false
         headers:
-          Content-Type: text/xml; charset=utf-8
-          # Content-Type: application/soap+xml; charset=utf-8;action="urn:updateLoggerData"
-        body: "{{lookup('file','./carbonAppUploader.xml')}}"
-        status_code: 202
-        return_content: yes
+          Content-Type: text/xml;charset=UTF-8
+          SOAPAction: urn:uploadApp
+        status_code: 200
       register: result
     - name: dump result
       debug:
